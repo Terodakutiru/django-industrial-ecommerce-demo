@@ -1,0 +1,60 @@
+{% load static %}
+
+<div class="home-ai" data-endpoint="{% url 'shop:recommend_product' %}">
+  <div class="home-ai__card">
+
+    <div class="home-ai__header">
+      <div class="home-ai__logo">
+        <img
+          src="{% static 'img/unisens-logo-tagline-PL-black.svg' %}"
+          alt="UniSens AI"
+          class="home-ai__logo-img"
+        />
+      </div>
+      <div class="home-ai__brand">
+        <div class="home-ai__brand-name">UniSens<span>AI</span></div>
+        <div class="home-ai__brand-caption">
+          Asystent doboru mierników wilgotności
+        </div>
+      </div>
+    </div>
+
+    <div class="home-ai__content">
+      <div class="home-ai__intro">
+        <h3 class="home-ai__title">Dobór miernika z pomocą AI</h3>
+        <p class="home-ai__text">
+          Napisz kilka zdań o sytuacji - jakie materiały chcesz badać, gdzie mierzysz
+          wilgotność, na jakim etapie prac jesteś. Asystent AI może dopytać o szczegóły,
+          a następnie zaproponuje 1-3 mierniki Protimeter pasujące do Twojego zastosowania.
+        </p>
+      </div>
+
+      <div class="home-ai__form">
+        <label for="application-text" class="home-ai__label">
+          Opisz zastosowanie:
+        </label>
+
+        <textarea
+          id="application-text"
+          rows="4"
+          class="home-ai__textarea"
+          placeholder="Np. nowe mieszkanie, posadzka anhydrytowa przed układaniem paneli, pomiary dla ekipy parkieciarzy..."
+        ></textarea>
+
+        <div class="home-ai__actions">
+          <button type="button" id="ai-suggest-btn" class="btn primary-btn home-ai__button">
+            Zaproponuj miernik z pomocą AI
+          </button>
+
+          <button type="button" id="ai-reset-btn" class="btn home-ai__reset-btn">
+            Wyczyść rozmowę
+          </button>
+        </div>
+
+        <div id="ai-suggestion" class="home-ai__result" style="display:none;"></div>
+        <div id="ai-questions" class="ai-questions" style="display:none;"></div>
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+{% load wagtailcore_tags %}
+{% load static %}
+
+{% block content %}
+  <h1>Finalizacja zamówienia</h1>
+
+  {# PODSUMOWANIE #}
+
+  <p style="margin:8px 0 0;">
+    Produkty:
+    <strong>{{ products_gross|floatformat:2 }} zł brutto</strong>
+    <span style="color:#64748b;font-size:13px;">
+      ({{ total_net|floatformat:2 }} zł netto)
+    </span>
+  </p>
+
+  <p style="margin:8px 0 0;">
+    Dostawa:
+    <strong>{{ shipping_gross|floatformat:2 }} zł brutto</strong>
+    <span style="color:#64748b;font-size:13px;">
+      ({{ shipping_net|floatformat:2 }} zł netto)
+    </span>
+  </p>
+
+  <p style="margin:10px 0 0;">
+    <strong>Razem: {{ total_gross_with_shipping|floatformat:2 }} zł brutto</strong>
+  </p>
+  <p style="color:#64748b;font-size:13px;margin-top:-8px;">
+    <br>
+    ({{ total_net_with_shipping|floatformat:2 }} zł netto)
+  </p>
+
+  <h2>Dane zamawiającego</h2>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="field">{{ form.tax_id.label_tag }} {{ form.tax_id }} {{ form.tax_id.errors }}</div>
+    <div class="field">{{ form.name.label_tag }} {{ form.name }} {{ form.name.errors }}</div>
+    <div class="field">{{ form.email.label_tag }} {{ form.email }} {{ form.email.errors }}</div>
+    <div class="field">{{ form.phone.label_tag }} {{ form.phone }} {{ form.phone.errors }}</div>
+    <div class="field">{{ form.company.label_tag }} {{ form.company }} {{ form.company.errors }}</div>
+
+    {# ===== ADRES DO FAKTURY (ZAWSZE: 3 POLA) ===== #}
+    <h3 style="margin:18px 0 10px 0;">Adres do faktury</h3>
+
+    <div class="checkout-grid">
+      <div class="field">
+        {{ form.invoice_street.label_tag }}
+        {{ form.invoice_street }}
+        {{ form.invoice_street.errors }}
+      </div>
+
+      <div class="field">
+        {{ form.invoice_city.label_tag }}
+        {{ form.invoice_city }}
+        {{ form.invoice_city.errors }}
+      </div>
+
+      <div class="field">
+        {{ form.invoice_postal.label_tag }}
+        {{ form.invoice_postal }}
+        {{ form.invoice_postal.errors }}
+      </div>
+    </div>
+
+    <div style="color:#64748b;font-size:13px;margin-top:6px;">
+      Format: <strong>Ulica i numer, Miasto, 00-000</strong>
+    </div>
+
+    {# ===== CHECKBOX ===== #}
+    <div class="field checkbox" style="margin-top:12px;">
+      <label class="checkbox-row">
+        {{ form.use_different_address }}
+        <span>{{ form.use_different_address.label }}</span>
+      </label>
+      {{ form.use_different_address.errors }}
+    </div>
+
+    {# ===== ADRES DOSTAWY (DOPIERO PO CHECKBOX) ===== #}
+    <div id="delivery-wrap" style="display:none;">
+      <h3 style="margin:18px 0 10px 0;">Adres dostawy</h3>
+
+      <div class="checkout-grid">
+        <div class="field">
+          {{ form.delivery_street.label_tag }}
+          {{ form.delivery_street }}
+          {{ form.delivery_street.errors }}
+        </div>
+
+        <div class="field">
+          {{ form.delivery_city.label_tag }}
+          {{ form.delivery_city }}
+          {{ form.delivery_city.errors }}
+        </div>
+
+        <div class="field">
+          {{ form.delivery_postal.label_tag }}
+          {{ form.delivery_postal }}
+          {{ form.delivery_postal.errors }}
+        </div>
+      </div>
+
+      <div style="color:#64748b;font-size:13px;margin-top:6px;">
+        Format dla kuriera: <strong>Ulica i numer, Miasto, 00-000</strong>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:12px;">
+      {{ form.notes.label_tag }} {{ form.notes }} {{ form.notes.errors }}
+    </div>
+
+    <button class="btn primary-btn" type="submit">Zamawiam i płacę</button>
+
+    <br><br>
+
+    <h3 class="mt-5">Płatność</h3>
+    <div class="payment-grid">
+
+      <label class="pay-option">
+        <input type="radio" name="payment_method" value="p24"
+          {% if selected_payment_method == "p24" %}checked{% endif %}>
+        <div class="pay-card">
+          <div class="pay-left">
+            <div class="pay-title">Przelewy24</div>
+            <div class="pay-sub">BLIK, szybkie przelewy, karta</div>
+          </div>
+          <div class="pay-right">
+            <img src="{% static 'img/payments/p24.png' %}" alt="Przelewy24" class="pay-logo">
+          </div>
+        </div>
+      </label>
+
+      <label class="pay-option">
+        <input type="radio" name="payment_method" value="bank"
+          {% if selected_payment_method == "bank" %}checked{% endif %}>
+        <div class="pay-card">
+          <div class="pay-left">
+            <div class="pay-title">Zapłać przelewem tradycyjnym</div>
+            <div class="pay-sub">Proforma / ręczna weryfikacja</div>
+          </div>
+          <div class="pay-right">
+            <img src="{% static 'img/payments/bank.png' %}" alt="Przelew tradycyjny" class="pay-logo">
+          </div>
+        </div>
+      </label>
+
+    </div>
+  </form>
+
+  <script>
+  // ====== Toggle adresu dostawy (3 pola) ======
+  document.addEventListener("DOMContentLoaded", function () {
+    const checkbox = document.querySelector('input[name="use_different_address"]');
+    const wrap = document.getElementById("delivery-wrap");
+
+    const ds = document.querySelector('[name="delivery_street"]');
+    const dc = document.querySelector('[name="delivery_city"]');
+    const dp = document.querySelector('[name="delivery_postal"]');
+
+    if (!checkbox || !wrap || !ds || !dc || !dp) return;
+
+    function sync() {
+      const show = checkbox.checked;
+      wrap.style.display = show ? "block" : "none";
+
+      ds.disabled = !show;
+      dc.disabled = !show;
+      dp.disabled = !show;
+
+      if (!show) {
+        ds.value = "";
+        dc.value = "";
+        dp.value = "";
+      }
+    }
+
+    checkbox.addEventListener("change", sync);
+    sync();
+  });
+
+  // ====== REGON autofill: firma + (opcjonalnie) adres faktury ======
+  (function () {
+    function initRegonAutofill() {
+      const nipInput = document.querySelector('input[name="tax_id"]');
+      const companyInput = document.querySelector('input[name="company"]');
+
+      // Faktura (3 pola)
+      const invStreet = document.querySelector('input[name="invoice_street"]');
+      const invCity = document.querySelector('input[name="invoice_city"]');
+      const invPostal = document.querySelector('input[name="invoice_postal"]');
+
+      if (!nipInput || !companyInput) return;
+
+      let lastNip = null;
+      let inFlight = false;
+
+      nipInput.addEventListener("blur", async function () {
+        const nip = (nipInput.value || "").replace(/\D/g, "");
+        if (nip.length !== 10) return;
+        if (nip === lastNip) return;
+        if (inFlight) return;
+
+        lastNip = nip;
+        inFlight = true;
+
+        const prevCompany = companyInput.value;
+        companyInput.value = "Pobieranie danych z GUS…";
+        companyInput.disabled = true;
+
+        try {
+          const res = await fetch(`/api/regon/?nip=${encodeURIComponent(nip)}`, {
+            headers: { "Accept": "application/json" }
+          });
+
+          if (!res.ok) {
+            companyInput.value = prevCompany || "";
+            return;
+          }
+
+          const data = await res.json();
+
+          if (data && data.name) {
+            companyInput.value = data.name;
+          } else {
+            companyInput.value = prevCompany || "";
+          }
+
+          // Jeśli endpoint daje data.address jako string:
+          // uzupełniamy tylko ulicę (resztę user dopisze),
+          // chyba że już coś wpisane.
+          // ===== Adres faktury: 3 pola (tylko jeśli puste) =====
+            if (invStreet && (!invStreet.value || !invStreet.value.trim())) {
+              if (data.street_line) invStreet.value = data.street_line;
+              else if (data.address) invStreet.value = data.address; // fallback (jedna linia)
+            }
+
+            if (invCity && (!invCity.value || !invCity.value.trim())) {
+              if (data.city) invCity.value = data.city;
+            }
+
+            if (invPostal && (!invPostal.value || !invPostal.value.trim())) {
+              if (data.postal_code) invPostal.value = data.postal_code;
+            }
+
+          // Jeśli w przyszłości zwrócisz osobno street/city/postal,
+          // to tutaj można wstawić:
+          // invStreet.value = data.street || invStreet.value;
+          // invCity.value = data.city || invCity.value;
+          // invPostal.value = data.postal || invPostal.value;
+
+        } catch (e) {
+          console.error("REGON autofill error:", e);
+          companyInput.value = prevCompany || "";
+        } finally {
+          companyInput.disabled = false;
+          inFlight = false;
+        }
+      });
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initRegonAutofill);
+    } else {
+      initRegonAutofill();
+    }
+  })();
+
+  // Hint pod NIP
+  (function () {
+    const nipInput = document.querySelector('input[name="tax_id"]');
+    if (!nipInput) return;
+
+    const hint = document.createElement("small");
+    hint.textContent = "Wpisz NIP – dane firmy i (opcjonalnie) adres uzupełnią się automatycznie z GUS.";
+    hint.style.display = "block";
+    hint.style.color = "#666";
+    hint.style.marginTop = "4px";
+
+    nipInput.parentNode.appendChild(hint);
+  })();
+  </script>
+
+{% endblock %}

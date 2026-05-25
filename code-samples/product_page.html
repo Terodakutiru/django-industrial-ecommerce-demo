@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+{% load wagtailcore_tags wagtailimages_tags %}
+{% load shop_extras %}
+{% block content %}
+{% load static %}
+  {# HERO – nagłówek produktu z tłem #}
+  <section class="product-hero">
+    <div class="product-hero-inner">
+      <div class="product-hero-text">
+        <p class="product-crumb">
+          Protimeter • wilgotnościomierze
+        </p>
+
+        <h1 class="product-hero-title">{{ page.title }}</h1>
+
+        {% if page.short_description %}
+          <p class="product-hero-subtitle">
+            {{ page.short_description }}
+          </p>
+        {% endif %}
+
+        <div class="product-hero-meta">
+          {% if page.price %}
+            <span class="chip chip-primary" id="product-price">
+              {{ page.price|gross|floatformat:2 }} zł brutto
+            </span>
+          {% else %}
+            <span class="chip chip-muted">
+              Cena na zapytanie
+            </span>
+          {% endif %}
+
+          {% if page.stock_status %}
+            <span class="chip chip-outline">
+              {% if page.stock_status == "in_stock" %}
+                ✅ {{ page.get_stock_badge_label }}
+              {% elif page.stock_status == "low_stock" %}
+                ⚠️ {{ page.get_stock_badge_label }}
+              {% elif page.stock_status == "on_request" %}
+                ⌚ {{ page.get_stock_badge_label }}
+              {% elif page.stock_status == "unavailable" %}
+                ❌ {{ page.get_stock_badge_label }}
+              {% endif %}
+            </span>
+          {% endif %}
+
+          {# NOWE: informacja o czasie dostawy #}
+          <span class="chip chip-muted">
+            🚚 {{ page.get_delivery_time_display }}
+          </span>
+        </div>
+      </div>
+
+      <div class="product-hero-image">
+        {% if page.main_image %}
+          {% image page.main_image fill-380x300 class="js-product-main-image" %}
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  {# BLOK: obraz + akcje (koszyk / zapytanie) #}
+  <section class="page-section">
+    <div class="product-detail">
+
+      {# LEWA KOLUMNA – ZDJĘCIA + KARTY #}
+      <div class="product-detail__image">
+
+        {% if page.main_image or page.gallery_images %}
+          <div class="product-slider" data-slider>
+            <div class="product-slider__viewport">
+              <div class="product-slider__track" data-slider-track>
+
+                {# slide 0 – main_image #}
+                {% if page.main_image %}
+                  <div class="product-slide is-active" data-slide-index="0">
+                    {% image page.main_image fill-800x800 %}
+                  </div>
+                {% endif %}
+
+                {# kolejne slajdy z galerii #}
+                {% with 1 as idx %}
+                  {% for block in page.gallery_images %}
+                    {% if block.block_type == "image" and block.value %}
+                      <div class="product-slide{% if not page.main_image and forloop.first %} is-active{% endif %}"
+                           data-slide-index="{{ forloop.counter0|add:idx }}">
+                        {% image block.value fill-800x800 %}
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                {% endwith %}
+
+              </div>
+            </div>
+
+            <button type="button"
+                    class="product-slider__nav product-slider__nav--prev"
+                    data-slider-prev>
+              ‹
+            </button>
+            <button type="button"
+                    class="product-slider__nav product-slider__nav--next"
+                    data-slider-next>
+              ›
+            </button>
+
+            <div class="product-slider__thumbs" data-slider-thumbs>
+              {% if page.main_image %}
+                <button type="button"
+                        class="product-thumb is-active"
+                        data-slider-thumb
+                        data-slide-to="0">
+                  {% image page.main_image fill-120x120 %}
+                </button>
+              {% endif %}
+
+              {% with 1 as idx %}
+                {% for block in page.gallery_images %}
+                  {% if block.block_type == "image" and block.value %}
+                    <button type="button"
+                            class="product-thumb{% if not page.main_image and forloop.first %} is-active{% endif %}"
+                            data-slider-thumb
+                            data-slide-to="{{ forloop.counter0|add:idx }}">
+                      {% image block.value fill-120x120 %}
+                    </button>
+                  {% endif %}
+                {% endfor %}
+              {% endwith %}
+            </div>
+          </div>
+        {% else %}
+          <p>Brak zdjęć produktu.</p>
+        {% endif %}
+
+        {# KARTA: Zalety / Zastosowanie (pod sliderem) #}
+        {% if page.advantages or page.applications %}
+          <div class="product-sections">
+            <article class="product-section-card">
+              <h2>Zalety i zastosowanie</h2>
+              <div class="product-section-grid-2">
+                {% if page.advantages %}
+                  <div>
+                    <h3>Zalety</h3>
+                    {{ page.advantages|richtext }}
+                  </div>
+                {% endif %}
+                {% if page.applications %}
+                  <div>
+                    <h3>Zastosowanie</h3>
+                    {{ page.applications|richtext }}
+                  </div>
+                {% endif %}
+              </div>
+            </article>
+          </div>
+        {% endif %}
+
+        {# KARTA: Mierzone parametry + Pliki do pobrania #}
+        {% if page.measured_parameters or page.downloads %}
+          <div class="product-side-card">
+
+            {% if page.measured_parameters %}
+              <h3 class="product-side-card__title">Mierzone parametry</h3>
+              <div class="product-side-card__body">
+                {{ page.measured_parameters|richtext }}
+              </div>
+            {% endif %}
+
+            {% if page.downloads %}
+              <div class="product-side-card__downloads">
+                <h4>Pliki do pobrania</h4>
+                <ul>
+                  {% for block in page.downloads %}
+                    {% if block.block_type == "manual" %}
+                      <li>
+                        <a href="{{ block.value.url }}" target="_blank">
+                          {{ block.value.title }}
+                        </a>
+                      </li>
+                    {% endif %}
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+
+      </div> {# .product-detail__image #}
+
+      {# PRAWA KOLUMNA – OPIS + OPCJE + PRZYCISKI + AKCESORIA #}
+      <div class="product-detail__info">
+
+        {# === OPCJE KONFIGURACJI NAD KOSZYKIEM === #}
+        {% with page.options.all as options %}
+          {% if options %}
+            <section class="product-options-card">
+              <h2 class="product-options-card__title">Opcje konfiguracji</h2>
+              <p class="product-options-card__hint">
+                Wybierz jedną opcję – zmieni ona SKU i cenę.
+              </p>
+
+              <div class="product-options-list">
+                {% for opt in options %}
+                  <label class="product-option-pill">
+                    <input type="radio"
+                           name="option_id"
+                           value="{{ opt.id }}"
+                           data-sku="{{ opt.sku }}"
+                           data-extra-price="{{ opt.extra_price }}"
+                           {% if forloop.first %}checked{% endif %}>
+                    <span class="product-option-pill__name">{{ opt.name }}</span>
+
+                    {% if opt.extra_price and opt.extra_price != 0 %}
+                      <span class="product-option-pill__extra">
+                        +{{ opt.extra_price }} zł
+                      </span>
+                    {% endif %}
+
+                    {% if opt.description %}
+                      <span class="product-option-pill__desc">
+                        {{ opt.description }}
+                      </span>
+                    {% endif %}
+                  </label>
+                {% endfor %}
+              </div>
+            </section>
+          {% endif %}
+        {% endwith %}
+
+        {# PRZYCISKI: KOSZYK / ZAPYTANIE #}
+        <div class="product-detail__actions">
+          <a href="{% url 'shop:quote_request_for_product' page.id %}" class="btn secondary-btn">
+            Zapytaj o ofertę
+          </a>
+
+          <span class="chip chip-outline">
+            {% if page.stock_status == "in_stock" %}
+              ✅ {{ page.get_stock_badge_label }}
+            {% elif page.stock_status == "low_stock" %}
+              ⚠️ {{ page.get_stock_badge_label }}
+            {% elif page.stock_status == "on_request" %}
+              ⌚ {{ page.get_stock_badge_label }}
+            {% elif page.stock_status == "unavailable" %}
+              ❌ {{ page.get_stock_badge_label }}
+            {% endif %}
+          </span>
+
+          {# NOWE: czas dostawy także przy akcjach zakupowych #}
+          <span class="chip chip-muted">
+            🚚 {{ page.get_delivery_time_display }}
+          </span>
+
+          {% if page.price and page.stock_status != "unavailable" %}
+            <form action="{% url 'shop:add_to_cart' %}" method="post" data-add-to-cart-form class="add-to-cart-form">
+              {% csrf_token %}
+              <input type="hidden" name="product_id" value="{{ page.id }}">
+
+              <button type="submit" class="btn primary-btn" data-add-to-cart-btn>
+                Dodaj do koszyka
+              </button>
+
+              <div class="qty-picker qty-picker--md" data-qty>
+                <button type="button" class="qty-btn" data-qty-dec aria-label="Zmniejsz ilość">−</button>
+                <input
+                  type="number"
+                  name="quantity"
+                  value="1"
+                  min="1"
+                  step="1"
+                  inputmode="numeric"
+                  class="qty-input"
+                  data-qty-input
+                >
+                <button type="button" class="qty-btn" data-qty-inc aria-label="Zwiększ ilość">+</button>
+
+                <span class="chip chip-primary" id="product-price2">
+                  {{ page.price|gross|floatformat:2 }} zł brutto
+                </span>
+              </div>
+            </form>
+          {% endif %}
+        </div>
+
+        {% if page.body %}
+          <div class="product-detail__body">
+            {{ page.body|richtext }}
+          </div>
+        {% endif %}
+
+        {# AKCESORIA – POD OPISEM #}
+        {% with page.accessories.all as accessories %}
+          {% if accessories %}
+            <div class="product-accessories">
+              <h3>Akcesoria</h3>
+              <p class="product-accessories__hint">
+                Zaznacz akcesoria, które chcesz dodać do zamówienia.
+              </p>
+
+              <div class="product-accessories__list">
+                {% for acc in accessories %}
+                  <label class="product-accessory">
+                    <input type="checkbox"
+                           name="accessory_ids"
+                           value="{{ acc.id }}">
+                    <span class="product-accessory__name">
+                      {{ acc.title }}
+                    </span>
+                    {% if acc.price %}
+                      <span class="product-accessory__price">
+                        +{{ acc.price }} zł
+                      </span>
+                    {% endif %}
+                  </label>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+        {% endwith %}
+
+      </div> {# .product-detail__info #}
+
+    </div> {# .product-detail #}
+  </section>
+
+{% endblock %}

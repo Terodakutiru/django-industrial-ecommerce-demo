@@ -1,0 +1,382 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div style="max-width:1100px;margin:24px auto;padding:0 16px;">
+  <h1 style="margin-bottom:24px;">Panel operacyjny</h1>
+
+  <!-- MODUŁY -->
+  <section style="margin-bottom:40px;">
+    <h2 style="margin:0 0 16px 0;font-size:28px;">Moduły</h2>
+
+    <div style="display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:16px;">
+      <a href="{% url 'shop:quote_requests_dashboard' %}" style="text-decoration:none;color:inherit;">
+        <div style="background:#fff;border:1px solid rgba(50,205,50,1);border-radius:16px;padding:18px;min-height:130px;">
+          <div style="font-size:13px;color:#64748b;">❔ Zapytania ofertowe</div>
+          <div style="font-size:32px;font-weight:800;margin-top:8px;">{{ quotes_count }}</div>
+        </div>
+      </a>
+
+      <a href="{% url 'shop:draft_orders_dashboard' %}" style="text-decoration:none;color:inherit;">
+        <div style="background:#fff;border:1px solid rgba(50,205,50,1);border-radius:16px;padding:18px;min-height:130px;">
+          <div style="font-size:13px;color:#64748b;">⚙️ Zamówienia robocze</div>
+          <div style="font-size:32px;font-weight:800;margin-top:8px;">{{ draft_orders_count }}</div>
+        </div>
+      </a>
+
+      <a href="{% url 'shop:packing_dashboard' %}" style="text-decoration:none;color:inherit;">
+        <div style="background:#fff;border:1px solid rgba(50,205,50,1);border-radius:16px;padding:18px;min-height:130px;">
+          <div style="font-size:13px;color:#64748b;">📦 Pakownia</div>
+          <div style="font-size:32px;font-weight:800;margin-top:8px;">{{ packing_count }}</div>
+        </div>
+      </a>
+
+      <a href="{% url 'shop:cases_dashboard' %}" style="text-decoration:none;color:inherit;">
+        <div style="background:#fff;border:1px solid rgba(50,205,50,1);border-radius:16px;padding:18px;min-height:130px;">
+          <div style="font-size:13px;color:#64748b;">↩️ Zwroty / reklamacje</div>
+          <div style="font-size:32px;font-weight:800;margin-top:8px;">{{ cases_count }}</div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- AKCJE -->
+  <section style="margin-bottom:40px;">
+    <h2 style="margin:0 0 16px 0;font-size:28px;">Akcje</h2>
+
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(220px,260px));gap:16px;">
+      <div class="operations-tile operations-tile-action" onclick="openPriceImport()">
+        <div class="operations-tile-icon">💲</div>
+        <div class="operations-tile-label">Import cennika</div>
+        <div class="operations-tile-sub">CSV / XLSX</div>
+      </div>
+
+      <div class="operations-tile operations-tile-action" onclick="openStockImport()">
+        <div class="operations-tile-icon">📦</div>
+        <div class="operations-tile-label">Aktualizuj stany</div>
+        <div class="operations-tile-sub">CSV / XLSX</div>
+      </div>
+    </div>
+
+    <div style="margin-top:10px;font-size:14px;color:#64748b;">
+      Nowe pliki cennika i stanów magazynowych wgrywasz wyłącznie przez powyższe akcje.
+      Poniżej widzisz aktualnie aktywne pliki i historię zmian.
+    </div>
+  </section>
+
+  <!-- STATYSTYKI -->
+  <section style="margin-bottom:40px;">
+    <h2 style="margin:0 0 16px 0;font-size:28px;">Statystyki</h2>
+
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:16px;max-width:860px;">
+      <div style="background:#fff3c2;border:1px solid rgba(15,23,42,.12);border-radius:16px;padding:18px;min-height:130px;">
+        <div style="font-size:13px;color:#64748b;">📤 Wysłane</div>
+        <div style="font-size:32px;font-weight:800;margin-top:8px;">{{ shipped_count }}</div>
+      </div>
+
+      <div style="background:#fdf1c1;border:1px solid rgba(15,23,42,.12);border-radius:16px;padding:18px;min-height:130px;">
+        <div style="font-size:13px;color:#64748b;">❕ Problemy</div>
+        <div style="font-size:32px;font-weight:800;margin-top:8px;">{{ problem_count }}</div>
+      </div>
+
+      <div style="background:#fdf1c1;border:1px solid rgba(15,23,42,.12);border-radius:16px;padding:18px;min-height:130px;">
+        <div style="font-size:13px;color:#64748b;">↩️ Otwarte sprawy</div>
+        <div style="font-size:32px;font-weight:800;margin-top:8px;">{{ cases_open_count }}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ŹRÓDŁA DANYCH -->
+  <section style="margin-bottom:40px;">
+    <h2 style="margin:0 0 16px 0;font-size:28px;">Źródła danych</h2>
+
+    <div class="data-upload-grid">
+
+      <div class="upload-card">
+        <h3 style="margin-top:0;">Aktualnie aktywne pliki</h3>
+
+        <div class="current-file-box">
+          <h4 style="margin:0 0 10px 0;">Cennik</h4>
+          {% if current_price_list %}
+            <p><strong>Plik:</strong> {{ current_price_list.original_filename }}</p>
+            <p><strong>Data:</strong> {{ current_price_list.uploaded_at|date:"d.m.Y H:i" }}</p>
+            <p><strong>Autor:</strong> {{ current_price_list.uploaded_by|default:"—" }}</p>
+            <p><strong>Opis:</strong> {{ current_price_list.version_note|default:"—" }}</p>
+            <p style="margin-bottom:0;">
+              <a href="{{ current_price_list.file.url }}" target="_blank">Pobierz plik</a>
+            </p>
+          {% else %}
+            <p style="margin-bottom:0;">Brak aktywnego pliku cennika.</p>
+          {% endif %}
+        </div>
+
+        <div class="current-file-box">
+          <h4 style="margin:0 0 10px 0;">Stany magazynowe</h4>
+          {% if current_stock %}
+            <p><strong>Plik:</strong> {{ current_stock.original_filename }}</p>
+            <p><strong>Data:</strong> {{ current_stock.uploaded_at|date:"d.m.Y H:i" }}</p>
+            <p><strong>Autor:</strong> {{ current_stock.uploaded_by|default:"—" }}</p>
+            <p><strong>Opis:</strong> {{ current_stock.version_note|default:"—" }}</p>
+            <p style="margin-bottom:0;">
+              <a href="{{ current_stock.file.url }}" target="_blank">Pobierz plik</a>
+            </p>
+          {% else %}
+            <p style="margin-bottom:0;">Brak aktywnego pliku stanów magazynowych.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="upload-card">
+        <h3 style="margin-top:0;">Szybki podgląd historii</h3>
+
+        <div style="margin-bottom:18px;">
+          <h4 style="margin:0 0 10px 0;">Ostatnie wersje cennika</h4>
+          <ul style="margin:0;padding-left:18px;">
+            {% for item in price_list_history|slice:":5" %}
+              <li style="margin-bottom:6px;">
+                {{ item.uploaded_at|date:"d.m.Y H:i" }} —
+                {{ item.original_filename }}
+                {% if item.is_active %}<strong>(aktywny)</strong>{% endif %}
+              </li>
+            {% empty %}
+              <li>Brak historii cenników.</li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <div>
+          <h4 style="margin:0 0 10px 0;">Ostatnie wersje stanów</h4>
+          <ul style="margin:0;padding-left:18px;">
+            {% for item in stock_history|slice:":5" %}
+              <li style="margin-bottom:6px;">
+                {{ item.uploaded_at|date:"d.m.Y H:i" }} —
+                {{ item.original_filename }}
+                {% if item.is_active %}<strong>(aktywny)</strong>{% endif %}
+              </li>
+            {% empty %}
+              <li>Brak historii stanów magazynowych.</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- HISTORIA CENNIKA -->
+  <section style="margin-bottom:24px;">
+    <div class="upload-card">
+      <h2 style="margin-top:0;">Historia zmian — cennik</h2>
+      <table class="upload-table">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Plik</th>
+            <th>Autor</th>
+            <th>Opis</th>
+            <th>Status</th>
+            <th>Akcja</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in price_list_history %}
+            <tr>
+              <td>{{ item.uploaded_at|date:"d.m.Y H:i" }}</td>
+              <td>
+                <a href="{{ item.file.url }}" target="_blank">
+                  {{ item.original_filename }}
+                </a>
+              </td>
+              <td>{{ item.uploaded_by|default:"—" }}</td>
+              <td>{{ item.version_note|default:"—" }}</td>
+              <td>
+                {% if item.is_active %}
+                  <strong>Aktywny</strong>
+                {% else %}
+                  Archiwum
+                {% endif %}
+              </td>
+              <td>
+                {% if not item.is_active %}
+                  <a href="{% url 'shop:set_active_upload' item.id %}" class="btn btn-small">
+                    Ustaw aktywny
+                  </a>
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6">Brak historii cenników.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- HISTORIA STANÓW -->
+  <section style="margin-bottom:24px;">
+    <div class="upload-card">
+      <h2 style="margin-top:0;">Historia zmian — stany magazynowe</h2>
+      <table class="upload-table">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Plik</th>
+            <th>Autor</th>
+            <th>Opis</th>
+            <th>Status</th>
+            <th>Akcja</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in stock_history %}
+            <tr>
+              <td>{{ item.uploaded_at|date:"d.m.Y H:i" }}</td>
+              <td>
+                <a href="{{ item.file.url }}" target="_blank">
+                  {{ item.original_filename }}
+                </a>
+              </td>
+              <td>{{ item.uploaded_by|default:"—" }}</td>
+              <td>{{ item.version_note|default:"—" }}</td>
+              <td>
+                {% if item.is_active %}
+                  <strong>Aktywny</strong>
+                {% else %}
+                  Archiwum
+                {% endif %}
+              </td>
+              <td>
+                {% if not item.is_active %}
+                  <a href="{% url 'shop:set_active_upload' item.id %}" class="btn btn-small">
+                    Ustaw aktywny
+                  </a>
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6">Brak historii stanów magazynowych.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- OVERLAY: IMPORT CENNIKA -->
+<div id="price-import-overlay" class="overlay">
+  <div class="overlay-card">
+
+    <div class="overlay-header">
+      <h2>Import cennika</h2>
+      <button class="overlay-close" type="button" onclick="closePriceImport()">✕</button>
+    </div>
+
+    <form method="post"
+          action="{% url 'shop:import_prices' %}"
+          enctype="multipart/form-data"
+          class="price-import-form">
+
+      {% csrf_token %}
+
+      <div class="dropzone" id="price-dropzone">
+        <p><strong>Przeciągnij plik CSV / XLSX z cenami</strong></p>
+        <p class="muted">lub kliknij aby wybrać</p>
+
+        <div class="import-hint">
+          <div><strong>Format importu:</strong></div>
+          <div>A = SKU</div>
+          <div>B = CENA_NETTO</div>
+          <div class="import-example">
+            Przykład:<br>
+            <code>BLD2000</code> | <code>1234.56</code>
+          </div>
+        </div>
+
+        <input type="file"
+               name="file"
+               id="price-file-input"
+               accept=".csv,.xlsx"
+               required>
+
+        <div class="selected-file-info" id="price-file-info">
+          Nie wybrano jeszcze pliku.
+        </div>
+      </div>
+
+      <div class="price-import-actions">
+        <button type="submit" class="btn primary-btn">
+          Importuj ceny
+        </button>
+
+        <button type="button"
+                class="btn secondary-btn"
+                onclick="closePriceImport()">
+          Anuluj
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- OVERLAY: IMPORT STANÓW -->
+<div id="stock-import-overlay" class="overlay">
+  <div class="overlay-card">
+
+    <div class="overlay-header">
+      <h2>Import stanów magazynowych</h2>
+      <button class="overlay-close" type="button" onclick="closeStockImport()">✕</button>
+    </div>
+
+    <form method="post"
+          action="{% url 'shop:import_stock' %}"
+          enctype="multipart/form-data"
+          class="price-import-form">
+
+      {% csrf_token %}
+
+      <div class="dropzone" id="stock-dropzone">
+        <p><strong>Przeciągnij plik CSV / XLSX ze stanami</strong></p>
+        <p class="muted">lub kliknij aby wybrać</p>
+
+        <input type="file"
+               name="file"
+               id="stock-file-input"
+               accept=".csv,.xlsx"
+               required>
+
+        <div class="selected-file-info" id="stock-file-info">
+          Nie wybrano jeszcze pliku.
+        </div>
+      </div>
+
+      <div class="import-hint">
+        Oczekiwany format pliku:
+        <strong>A = SKU</strong>,
+        <strong>B = stan magazynowy</strong>
+        <span class="muted">(wartość końcowa — import nadpisuje aktualny stan)</span>
+      </div>
+
+      <div class="price-import-actions">
+        <button type="submit" class="btn primary-btn">
+          Importuj stany
+        </button>
+
+        <button type="button"
+                class="btn secondary-btn"
+                onclick="closeStockImport()">
+          Anuluj
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+{% endblock %}

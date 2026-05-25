@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% load wagtailcore_tags %}
+{% load wagtailcore_tags wagtailimages_tags %}
+{% load shop_extras %}
+{% load static %}
+{% block content %}
+  <h1>Koszyk</h1>
+
+  {% if not cart or items|length == 0 %}
+    <p>Twój koszyk jest pusty.</p>
+    <p>
+      {% if product_index_page %}
+        <a href="{% pageurl product_index_page %}" class="btn primary-btn">
+          Przejdź do produktów
+        </a>
+      {% elif home_page %}
+        <a href="{% pageurl home_page %}" class="btn primary-btn">
+          Przejdź do produktów
+        </a>
+      {% else %}
+        <a href="/" class="btn primary-btn">
+          Przejdź do produktów
+        </a>
+      {% endif %}
+    </p>
+  {% else %}
+
+    <table class="cart-table">
+      <colgroup>
+        <col class="col-product">
+        <col class="col-qty">
+        <col class="col-unit">
+        <col class="col-sum">
+        <col class="col-actions">
+      </colgroup>
+
+      <thead>
+        <tr>
+          <th class="col-product">Produkt</th>
+          <th class="col-qty">Ilość</th>
+          <th class="col-unit">Cena szt.</th>
+          <th class="col-sum">Suma</th>
+          <th class="col-actions"></th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for item in items %}
+          <tr>
+            <td class="cart-td cart-td--product">
+
+              <a href="{{ item.product.url }}" class="cart-item-link">
+                {% if item.product.main_image %}
+                  <span class="cart-item-thumb">
+                    {% image item.product.main_image fill-80x80 %}
+                  </span>
+                {% endif %}
+
+                <span class="cart-item-info">
+                  <span class="cart-item-title">{{ item.product.title }}</span>
+
+                  {% if item.option %}
+                    <span class="cart-item-option">
+                      Opcja: {{ item.option.name }}
+                      {% if item.option.extra_price %}
+                        <span class="cart-item-option__extra">
+                          (+{{ item.option.extra_price }} zł)
+                        </span>
+                      {% endif %}
+                    </span>
+                  {% endif %}
+
+                  {% if item.sku %}
+                    <span class="cart-item-sku">SKU: {{ item.sku }}</span>
+                  {% endif %}
+
+                  <span class="cart-item-stock">
+                    Dostępne teraz: <strong>{{ item.available_now }}</strong> szt.
+                    {% if item.shortage > 0 %}
+                      <span class="cart-item-stock__warn">
+                        • Brakuje: <strong>{{ item.shortage }}</strong> szt.
+                      </span>
+                    {% endif %}
+                  </span>
+
+                  <span class="cart-item-delivery">
+                      🚚 {{ item.product.get_delivery_time_display }}
+                  </span>
+
+                  {% if item.parent_item %}
+                    <span class="cart-item-tag">
+                      Akcesorium do: {{ item.parent_item.product.title }}
+                    </span>
+                  {% endif %}
+                </span>
+              </a>
+
+              {% if item.shortage > 0 %}
+                <form method="post"
+                      action="{% url 'shop:set_shortage_mode' item.id %}"
+                      class="shortage-mode-form">
+                  {% csrf_token %}
+
+                  <div class="shortage-mode-title">
+                    Brakuje {{ item.shortage }} szt. — wybierz sposób realizacji:
+                  </div>
+
+                  <label class="shortage-mode-option">
+                    {% if item.shortage_mode == "all_later" %}
+                      <input type="radio" name="mode" value="all_later" checked onchange="this.form.submit()">
+                    {% else %}
+                      <input type="radio" name="mode" value="all_later" onchange="this.form.submit()">
+                    {% endif %}
+                    Zapytaj o całość ({{ item.quantity }} szt.) na określony termin
+                  </label>
+
+                  <label class="shortage-mode-option">
+                    {% if item.shortage_mode == "split" %}
+                      <input type="radio" name="mode" value="split" checked onchange="this.form.submit()">
+                    {% else %}
+                      <input type="radio" name="mode" value="split" onchange="this.form.submit()">
+                    {% endif %}
+                    Podziel zamówienie: {{ item.available_now }} szt. teraz + {{ item.shortage }} szt. później
+                  </label>
+                </form>
+
+                <div class="shortage-actions">
+                  <a class="btn secondary-btn btn-sm"
+                     href="{% url 'shop:quote_request_for_product' item.product.id %}?missing={{ item.shortage }}&mode={{ item.shortage_mode|default:'all_later' }}">
+                    Zapytaj o brakującą ilość
+                  </a>
+                </div>
+              {% endif %}
+            </td>
+
+            <td class="cart-td cart-td--qty">
+              <form method="post"
+                    action="{% url 'shop:update_cart_item' item.id %}"
+                    class="cart-qty-form"
+                    data-cart-qty-form>
+                {% csrf_token %}
+                <div class="qty-picker qty-picker--sm" data-qty>
+                  <button type="button" class="qty-btn" data-qty-dec aria-label="Zmniejsz ilość">−</button>
+                  <input type="number"
+                         name="quantity"
+                         value="{{ item.quantity }}"
+                         min="1"
+                         step="1"
+                         class="qty-input"
+                         data-qty-input>
+                  <button type="button" class="qty-btn" data-qty-inc aria-label="Zwiększ ilość">+</button>
+                </div>
+              </form>
+            </td>
+
+            <td class="cart-td cart-td--unit">
+              {{ item.unit_price|gross|floatformat:2 }} zł <br>brutto
+            </td>
+
+            <td class="cart-td cart-td--sum">
+              {{ item.line_total|gross|floatformat:2 }} zł <br>brutto
+            </td>
+
+            <td class="cart-td cart-td--actions">
+              <form method="post" action="{% url 'shop:remove_item_from_cart' item.id %}">
+                {% csrf_token %}
+                <button class="btn btn-sm secondary-btn" type="submit">Usuń</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="cart-summary">
+      <p class="cart-total">
+        <span style="display:block;margin-bottom:6px;">
+          Dostawa: <strong>{{ shipping_gross|floatformat:2 }} zł brutto</strong>
+          <span style="font-size:13px;color:#64748b;">
+            ({{ shipping_net|floatformat:2 }} zł netto)
+          </span>
+        </span>
+        <strong>Razem: {{ total_gross|floatformat:2 }} zł brutto (całość z dostawą)</strong><br>
+        <span style="font-size:13px;color:#64748b;">
+          ({{ total_net|floatformat:2 }} zł netto + {{ shipping_net|floatformat:2 }} zł netto)
+        </span>
+      </p>
+
+      <div>
+        {% if product_index_page %}
+          <a href="{% pageurl product_index_page %}" class="btn secondary-btn">
+            Kontynuuj zakupy
+          </a>
+        {% elif home_page %}
+          <a href="{% pageurl home_page %}" class="btn secondary-btn">
+            Kontynuuj zakupy
+          </a>
+        {% else %}
+          <a href="/" class="btn secondary-btn">
+            Kontynuuj zakupy
+          </a>
+        {% endif %}
+
+        <a href="{% url 'shop:checkout' %}" class="btn primary-btn">
+          Przejdź do zamówienia
+        </a>
+      </div>
+    </div>
+
+  {% endif %}
+{% endblock %}
