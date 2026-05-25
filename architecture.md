@@ -1,9 +1,10 @@
-Entities
+# Architecture
 
+```text
 Product
  ├── Product Options
  ├── Categories
- ├── Inventory
+ └── Inventory
 
 Cart
  └── Cart Items
@@ -15,4 +16,5 @@ Order
 
 AI Recommendation
  ├── Session
- └── Conversation turns
+ └── Conversation Turns
+```
