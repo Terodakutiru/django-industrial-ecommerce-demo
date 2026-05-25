@@ -45,11 +45,12 @@ Search page + AI product recommendation <br>
 Operational panel <br>
 <img width="1655" height="1341" alt="image" src="https://github.com/user-attachments/assets/27de0059-9f0e-4b3f-a20c-eba054b70e14" />
 Product page <br>
-<img width="1661" height="1325" alt="image" src="https://github.com/user-attachments/assets/84019ba0-21fa-49ac-9f05-e69b418c1ca1" />
+<img width="1959" height="1335" alt="image" src="https://github.com/user-attachments/assets/9c5f0704-b3fe-4081-bc75-2d9f1fbbb6ab" />
 Packing order page <br>
 <img width="1903" height="1313" alt="image" src="https://github.com/user-attachments/assets/628047e4-cf23-47e4-8622-cafff8f5641c" />
 <img width="1604" height="1263" alt="image" src="https://github.com/user-attachments/assets/5f30315a-1382-45ab-89be-daa889d414d8" />
 Checkout <br>
-<img width="1941" height="1309" alt="image" src="https://github.com/user-attachments/assets/2a39538c-d381-4f8f-b0ab-40d02e55be18" />
+<img width="2064" height="1338" alt="image" src="https://github.com/user-attachments/assets/12c97d0e-89c1-4d04-8038-7e5f580b2b36" />
 Order status <br>
-<img width="1894" height="1310" alt="image" src="https://github.com/user-attachments/assets/d975902e-40fc-440f-a129-27f46e9ec04a" />
+<img width="1932" height="1320" alt="image" src="https://github.com/user-attachments/assets/c1b79762-8f05-44d9-9872-cd6ae222d0e1" />
+
